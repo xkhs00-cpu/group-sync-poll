@@ -13,37 +13,47 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!scheduleName.trim() || !password.trim()) {
       toast.error('스케줄 이름과 비밀번호를 입력해주세요');
       return;
     }
 
-    const existing = getSchedule(scheduleName, password);
-    if (existing) {
-      toast.error('이미 존재하는 스케줄입니다. 다른 이름을 사용해주세요');
-      return;
-    }
+    try {
+      const existing = await getSchedule(scheduleName, password);
+      if (existing) {
+        toast.error('이미 존재하는 스케줄입니다. 다른 이름을 사용해주세요');
+        return;
+      }
 
-    createSchedule(scheduleName, password);
-    toast.success('새 스케줄이 생성되었습니다!');
-    navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
+      await createSchedule(scheduleName, password);
+      toast.success('새 스케줄이 생성되었습니다!');
+      navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
+    } catch (error) {
+      toast.error('오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('Create error:', error);
+    }
   };
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!scheduleName.trim() || !password.trim()) {
       toast.error('스케줄 이름과 비밀번호를 입력해주세요');
       return;
     }
 
-    const schedule = getSchedule(scheduleName, password);
-    if (!schedule) {
-      toast.error('일치하는 스케줄을 찾을 수 없습니다');
-      return;
-    }
+    try {
+      const schedule = await getSchedule(scheduleName, password);
+      if (!schedule) {
+        toast.error('일치하는 스케줄을 찾을 수 없습니다');
+        return;
+      }
 
-    toast.success('스케줄에 참여합니다');
-    navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
+      toast.success('스케줄에 참여합니다');
+      navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
+    } catch (error) {
+      toast.error('오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('Join error:', error);
+    }
   };
 
   const handleAdminLogin = () => {

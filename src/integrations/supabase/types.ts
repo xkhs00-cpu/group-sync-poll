@@ -14,7 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      date_selections: {
+        Row: {
+          date: string
+          id: string
+          participant_ids: string[]
+          schedule_id: string
+        }
+        Insert: {
+          date: string
+          id?: string
+          participant_ids?: string[]
+          schedule_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          participant_ids?: string[]
+          schedule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "date_selections_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participants: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          schedule_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          name: string
+          schedule_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          schedule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          password: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          password: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          password?: string
+        }
+        Relationships: []
+      }
+      time_options: {
+        Row: {
+          id: string
+          schedule_id: string
+          time: string
+          votes: string[]
+        }
+        Insert: {
+          id?: string
+          schedule_id: string
+          time: string
+          votes?: string[]
+        }
+        Update: {
+          id?: string
+          schedule_id?: string
+          time?: string
+          votes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_options_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

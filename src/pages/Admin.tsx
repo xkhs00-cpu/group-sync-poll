@@ -12,13 +12,23 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setSchedules(getSchedules());
+    const loadSchedules = async () => {
+      const data = await getSchedules();
+      setSchedules(data);
+    };
+    loadSchedules();
   }, []);
 
-  const handleDelete = (scheduleId: string) => {
-    deleteSchedule(scheduleId);
-    setSchedules(getSchedules());
-    toast.success('스케줄이 삭제되었습니다.');
+  const handleDelete = async (scheduleId: string) => {
+    try {
+      await deleteSchedule(scheduleId);
+      const data = await getSchedules();
+      setSchedules(data);
+      toast.success('스케줄이 삭제되었습니다.');
+    } catch (error) {
+      toast.error('삭제 중 오류가 발생했습니다.');
+      console.error('Error deleting schedule:', error);
+    }
   };
 
   const handleShare = (schedule: Schedule) => {

@@ -36,32 +36,42 @@ const Schedule = () => {
       return;
     }
 
-    const loadedSchedule = getSchedule(scheduleName, password);
-    if (!loadedSchedule) {
-      toast.error('스케줄을 찾을 수 없습니다');
-      navigate('/');
-      return;
-    }
+    const loadScheduleData = async () => {
+      try {
+        const loadedSchedule = await getSchedule(scheduleName, password);
+        if (!loadedSchedule) {
+          toast.error('스케줄을 찾을 수 없습니다');
+          navigate('/');
+          return;
+        }
 
-    setSchedule(loadedSchedule);
+        setSchedule(loadedSchedule);
 
-    const savedParticipantId = localStorage.getItem(`participant-${loadedSchedule.id}`);
-    if (savedParticipantId && loadedSchedule.participants.find(p => p.id === savedParticipantId)) {
-      setCurrentParticipantId(savedParticipantId);
-      setSelectedParticipantId(savedParticipantId);
-    } else {
-      setShowJoinDialog(true);
-    }
+        const savedParticipantId = localStorage.getItem(`participant-${loadedSchedule.id}`);
+        if (savedParticipantId && loadedSchedule.participants.find(p => p.id === savedParticipantId)) {
+          setCurrentParticipantId(savedParticipantId);
+          setSelectedParticipantId(savedParticipantId);
+        } else {
+          setShowJoinDialog(true);
+        }
+      } catch (error) {
+        toast.error('스케줄을 불러오는 중 오류가 발생했습니다.');
+        console.error('Load schedule error:', error);
+        navigate('/');
+      }
+    };
+
+    loadScheduleData();
   }, [scheduleName, password, navigate]);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!participantName.trim() || !schedule) {
       toast.error('이름을 입력해주세요');
       return;
     }
 
     const newParticipant: Participant = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: participantName,
       color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
     };
@@ -71,20 +81,25 @@ const Schedule = () => {
       participants: [...schedule.participants, newParticipant],
     };
 
-    saveSchedule(updatedSchedule);
-    setSchedule(updatedSchedule);
-    setCurrentParticipantId(newParticipant.id);
-    setSelectedParticipantId(newParticipant.id);
-    localStorage.setItem(`participant-${schedule.id}`, newParticipant.id);
-    setShowJoinDialog(false);
-    toast.success(`${participantName}님, 환영합니다!`);
+    try {
+      await saveSchedule(updatedSchedule);
+      setSchedule(updatedSchedule);
+      setCurrentParticipantId(newParticipant.id);
+      setSelectedParticipantId(newParticipant.id);
+      localStorage.setItem(`participant-${schedule.id}`, newParticipant.id);
+      setShowJoinDialog(false);
+      toast.success(`${participantName}님, 환영합니다!`);
+    } catch (error) {
+      toast.error('참여 중 오류가 발생했습니다.');
+      console.error('Join participant error:', error);
+    }
   };
 
-  const handleAddParticipant = () => {
+  const handleAddParticipant = async () => {
     const name = prompt('새 참여자의 이름을 입력하세요:');
     if (name && schedule) {
       const newParticipant: Participant = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name,
         color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
       };
@@ -92,13 +107,19 @@ const Schedule = () => {
         ...schedule,
         participants: [...schedule.participants, newParticipant],
       };
-      saveSchedule(updatedSchedule);
-      setSchedule(updatedSchedule);
-      toast.success(`${name}님이 추가되었습니다.`);
+
+      try {
+        await saveSchedule(updatedSchedule);
+        setSchedule(updatedSchedule);
+        toast.success(`${name}님이 추가되었습니다.`);
+      } catch (error) {
+        toast.error('참여자 추가 중 오류가 발생했습니다.');
+        console.error('Add participant error:', error);
+      }
     }
   };
 
-  const handleDateToggle = (date: string) => {
+  const handleDateToggle = async (date: string) => {
     if (!schedule || !selectedParticipantId) return;
 
     const existingSelection = schedule.dateSelections.find(ds => ds.date === date);
@@ -134,15 +155,20 @@ const Schedule = () => {
       dateSelections: updatedSelections,
     };
 
-    saveSchedule(updatedSchedule);
-    setSchedule(updatedSchedule);
+    try {
+      await saveSchedule(updatedSchedule);
+      setSchedule(updatedSchedule);
+    } catch (error) {
+      toast.error('날짜 선택 중 오류가 발생했습니다.');
+      console.error('Toggle date error:', error);
+    }
   };
 
-  const handleAddTimeOption = (time: string) => {
+  const handleAddTimeOption = async (time: string) => {
     if (!schedule) return;
 
     const newOption = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       time,
       votes: [],
     };
@@ -152,11 +178,16 @@ const Schedule = () => {
       timeOptions: [...schedule.timeOptions, newOption],
     };
 
-    saveSchedule(updatedSchedule);
-    setSchedule(updatedSchedule);
+    try {
+      await saveSchedule(updatedSchedule);
+      setSchedule(updatedSchedule);
+    } catch (error) {
+      toast.error('시간 옵션 추가 중 오류가 발생했습니다.');
+      console.error('Add time option error:', error);
+    }
   };
 
-  const handleToggleVote = (optionId: string) => {
+  const handleToggleVote = async (optionId: string) => {
     if (!schedule || !currentParticipantId) return;
 
     const updatedOptions = schedule.timeOptions.map(option => {
@@ -177,11 +208,16 @@ const Schedule = () => {
       timeOptions: updatedOptions,
     };
 
-    saveSchedule(updatedSchedule);
-    setSchedule(updatedSchedule);
+    try {
+      await saveSchedule(updatedSchedule);
+      setSchedule(updatedSchedule);
+    } catch (error) {
+      toast.error('투표 중 오류가 발생했습니다.');
+      console.error('Toggle vote error:', error);
+    }
   };
 
-  const handleDeleteOption = (optionId: string) => {
+  const handleDeleteOption = async (optionId: string) => {
     if (!schedule) return;
 
     const updatedSchedule = {
@@ -189,15 +225,25 @@ const Schedule = () => {
       timeOptions: schedule.timeOptions.filter(option => option.id !== optionId),
     };
 
-    saveSchedule(updatedSchedule);
-    setSchedule(updatedSchedule);
-    toast.success('시간 옵션이 삭제되었습니다');
+    try {
+      await saveSchedule(updatedSchedule);
+      setSchedule(updatedSchedule);
+      toast.success('시간 옵션이 삭제되었습니다');
+    } catch (error) {
+      toast.error('삭제 중 오류가 발생했습니다.');
+      console.error('Delete option error:', error);
+    }
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
     if (schedule) {
-      saveSchedule(schedule);
-      toast.success('스케줄이 저장되었습니다.');
+      try {
+        await saveSchedule(schedule);
+        toast.success('스케줄이 저장되었습니다.');
+      } catch (error) {
+        toast.error('저장 중 오류가 발생했습니다.');
+        console.error('Save schedule error:', error);
+      }
     }
   };
 
