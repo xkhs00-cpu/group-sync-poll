@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, UserPlus, Save, Share2 } from 'lucide-react';
 import { getSchedule, saveSchedule } from '@/lib/storage';
 import { Schedule as ScheduleType, Participant, PARTICIPANT_COLORS } from '@/types';
 import { toast } from 'sonner';
@@ -44,7 +44,6 @@ const Schedule = () => {
 
     setSchedule(loadedSchedule);
 
-    // Check if user already joined
     const savedParticipantId = localStorage.getItem(`participant-${loadedSchedule.id}`);
     if (savedParticipantId && loadedSchedule.participants.find(p => p.id === savedParticipantId)) {
       setCurrentParticipantId(savedParticipantId);
@@ -78,6 +77,24 @@ const Schedule = () => {
     toast.success(`${participantName}님, 환영합니다!`);
   };
 
+  const handleAddParticipant = () => {
+    const name = prompt('새 참여자의 이름을 입력하세요:');
+    if (name && schedule) {
+      const newParticipant: Participant = {
+        id: Date.now().toString(),
+        name,
+        color: PARTICIPIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
+      };
+      const updatedSchedule = {
+        ...schedule,
+        participants: [...schedule.participants, newParticipant],
+      };
+      saveSchedule(updatedSchedule);
+      setSchedule(updatedSchedule);
+      toast.success(`${name}님이 추가되었습니다.`);
+    }
+  };
+
   const handleDateToggle = (date: string) => {
     if (!schedule || !currentParticipantId) return;
 
@@ -87,7 +104,6 @@ const Schedule = () => {
     if (existingSelection) {
       const isSelected = existingSelection.participantIds.includes(currentParticipantId);
       if (isSelected) {
-        // Remove participant
         const newParticipantIds = existingSelection.participantIds.filter(id => id !== currentParticipantId);
         if (newParticipantIds.length === 0) {
           updatedSelections = schedule.dateSelections.filter(ds => ds.date !== date);
@@ -97,7 +113,6 @@ const Schedule = () => {
           );
         }
       } else {
-        // Add participant
         updatedSelections = schedule.dateSelections.map(ds =>
           ds.date === date
             ? { ...ds, participantIds: [...ds.participantIds, currentParticipantId] }
@@ -105,7 +120,6 @@ const Schedule = () => {
         );
       }
     } else {
-      // Create new selection
       updatedSelections = [
         ...schedule.dateSelections,
         { date, participantIds: [currentParticipantId] },
@@ -176,6 +190,22 @@ const Schedule = () => {
     setSchedule(updatedSchedule);
     toast.success('시간 옵션이 삭제되었습니다');
   };
+  
+  const handleSave = () => {
+    if (schedule) {
+      saveSchedule(schedule);
+      toast.success('스케줄이 저장되었습니다.');
+    }
+  };
+
+  const handleShare = () => {
+    if (schedule) {
+      const shareUrl = `${window.location.origin}/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast.success('공유 링크가 복사되었습니다.');
+    }
+  };
+
 
   if (!schedule) {
     return null;
@@ -200,6 +230,16 @@ const Schedule = () => {
               </p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSave} variant="outline">
+              <Save className="w-4 h-4 mr-2" />
+              저장
+            </Button>
+            <Button onClick={handleShare}>
+              <Share2 className="w-4 h-4 mr-2" />
+              공유
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -207,6 +247,7 @@ const Schedule = () => {
             <ParticipantList
               participants={schedule.participants}
               currentParticipantId={currentParticipantId}
+              onAddParticipant={handleAddParticipant}
             />
           </div>
 
