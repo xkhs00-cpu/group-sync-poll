@@ -3,8 +3,9 @@ import { DateSelection, Participant } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 interface CalendarProps {
   dateSelections: DateSelection[];
@@ -61,31 +62,39 @@ const Calendar = ({ dateSelections, participants, currentParticipantId, onDateTo
               const isSelected = selection?.participantIds.includes(currentParticipantId || '');
               const selectedParticipants = selection?.participantIds.map(id => 
                 participants.find(p => p.id === id)
-              ).filter(Boolean) || [];
+              ).filter(Boolean) as Participant[] || [];
+
+              const participantCount = selectedParticipants.length;
 
               return (
-                <button
-                  key={day.toISOString()}
-                  onClick={() => handleDateClick(day)}
-                  className={`
-                    aspect-square rounded-lg text-sm font-medium
-                    transition-all duration-200
-                    hover:scale-105 hover:shadow-md
-                    ${!isSameMonth(day, monthDate) ? 'text-muted-foreground/30' : ''}
-                    ${isSelected ? 'ring-2 ring-primary' : ''}
-                  `}
-                  style={{
-                    background: selectedParticipants.length > 0
-                      ? `linear-gradient(${selectedParticipants.map((p, idx) => {
-                          const percent = (100 / selectedParticipants.length);
-                          return `${p?.color} ${idx * percent}%, ${p?.color} ${(idx + 1) * percent}%`;
-                        }).join(', ')})`
-                      : 'transparent',
-                    color: selectedParticipants.length > 0 ? 'white' : 'inherit',
-                  }}
-                >
-                  {format(day, 'd')}
-                </button>
+                <div key={day.toISOString()} className="relative">
+                  <button
+                    onClick={() => handleDateClick(day)}
+                    className={`
+                      aspect-square rounded-lg text-sm font-medium w-full h-full
+                      transition-all duration-200
+                      hover:scale-105 hover:shadow-md
+                      ${!isSameMonth(day, monthDate) ? 'text-muted-foreground/30' : ''}
+                      ${isSelected ? 'ring-2 ring-primary' : ''}
+                    `}
+                    style={{
+                      background: selectedParticipants.length > 0
+                        ? `linear-gradient(${selectedParticipants.map((p, idx) => {
+                            const percent = (100 / selectedParticipants.length);
+                            return `${p?.color} ${idx * percent}%, ${p?.color} ${(idx + 1) * percent}%`;
+                          }).join(', ')})`
+                        : 'transparent',
+                      color: selectedParticipants.length > 0 ? 'white' : 'inherit',
+                    }}
+                  >
+                    {format(day, 'd')}
+                  </button>
+                  {participantCount > 1 && (
+                    <Badge variant="secondary" className="absolute -top-1 -right-1 h-4 w-4 p-0 justify-center text-xs">
+                      {participantCount}
+                    </Badge>
+                  )}
+                </div>
               );
             })}
           </div>
