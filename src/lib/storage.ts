@@ -39,3 +39,9 @@ export const createSchedule = (name: string, password: string): Schedule => {
   saveSchedule(newSchedule);
   return newSchedule;
 };
+
+export const deleteSchedule = (scheduleId: string): void => {
+  let schedules = getSchedules();
+  schedules = schedules.filter(s => s.id !== scheduleId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+};
