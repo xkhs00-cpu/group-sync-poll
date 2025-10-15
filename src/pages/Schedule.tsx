@@ -23,6 +23,7 @@ const Schedule = () => {
   const navigate = useNavigate();
   const [schedule, setSchedule] = useState<ScheduleType | null>(null);
   const [currentParticipantId, setCurrentParticipantId] = useState<string | null>(null);
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [participantName, setParticipantName] = useState('');
 
@@ -47,6 +48,7 @@ const Schedule = () => {
     const savedParticipantId = localStorage.getItem(`participant-${loadedSchedule.id}`);
     if (savedParticipantId && loadedSchedule.participants.find(p => p.id === savedParticipantId)) {
       setCurrentParticipantId(savedParticipantId);
+      setSelectedParticipantId(savedParticipantId);
     } else {
       setShowJoinDialog(true);
     }
@@ -72,6 +74,7 @@ const Schedule = () => {
     saveSchedule(updatedSchedule);
     setSchedule(updatedSchedule);
     setCurrentParticipantId(newParticipant.id);
+    setSelectedParticipantId(newParticipant.id);
     localStorage.setItem(`participant-${schedule.id}`, newParticipant.id);
     setShowJoinDialog(false);
     toast.success(`${participantName}님, 환영합니다!`);
@@ -96,15 +99,15 @@ const Schedule = () => {
   };
 
   const handleDateToggle = (date: string) => {
-    if (!schedule || !currentParticipantId) return;
+    if (!schedule || !selectedParticipantId) return;
 
     const existingSelection = schedule.dateSelections.find(ds => ds.date === date);
     let updatedSelections;
 
     if (existingSelection) {
-      const isSelected = existingSelection.participantIds.includes(currentParticipantId);
+      const isSelected = existingSelection.participantIds.includes(selectedParticipantId);
       if (isSelected) {
-        const newParticipantIds = existingSelection.participantIds.filter(id => id !== currentParticipantId);
+        const newParticipantIds = existingSelection.participantIds.filter(id => id !== selectedParticipantId);
         if (newParticipantIds.length === 0) {
           updatedSelections = schedule.dateSelections.filter(ds => ds.date !== date);
         } else {
@@ -115,14 +118,14 @@ const Schedule = () => {
       } else {
         updatedSelections = schedule.dateSelections.map(ds =>
           ds.date === date
-            ? { ...ds, participantIds: [...ds.participantIds, currentParticipantId] }
+            ? { ...ds, participantIds: [...ds.participantIds, selectedParticipantId] }
             : ds
         );
       }
     } else {
       updatedSelections = [
         ...schedule.dateSelections,
-        { date, participantIds: [currentParticipantId] },
+        { date, participantIds: [selectedParticipantId] },
       ];
     }
 
@@ -247,6 +250,8 @@ const Schedule = () => {
             <ParticipantList
               participants={schedule.participants}
               currentParticipantId={currentParticipantId}
+              selectedParticipantId={selectedParticipantId}
+              onParticipantSelect={setSelectedParticipantId}
               onAddParticipant={handleAddParticipant}
             />
           </div>
@@ -255,7 +260,7 @@ const Schedule = () => {
             <Calendar
               dateSelections={schedule.dateSelections}
               participants={schedule.participants}
-              currentParticipantId={currentParticipantId}
+              currentParticipantId={selectedParticipantId}
               onDateToggle={handleDateToggle}
             />
 
