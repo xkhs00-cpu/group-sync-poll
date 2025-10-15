@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Calendar, Lock, Users } from 'lucide-react';
+import { Calendar, Lock, Users, Shield } from 'lucide-react';
 import { getSchedule, createSchedule } from '@/lib/storage';
 import { toast } from 'sonner';
 
@@ -45,6 +45,21 @@ const Auth = () => {
     toast.success('스케줄에 참여합니다');
     navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
   };
+
+  const handleAdminLogin = () => {
+    const adminId = prompt('관리자 아이디를 입력하세요:');
+    if (adminId === 'admin') {
+      const adminPassword = prompt('관리자 비밀번호를 입력하세요:');
+      if (adminPassword === '0000') {
+        navigate('/admin');
+      } else {
+        toast.error('비밀번호가 올바르지 않습니다.');
+      }
+    } else if (adminId) {
+      toast.error('아이디가 올바르지 않습니다.');
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -110,6 +125,12 @@ const Auth = () => {
             </div>
           </CardContent>
         </Card>
+        <div className="text-center">
+            <Button onClick={handleAdminLogin} variant="outline" size="sm">
+                <Shield className="w-4 h-4 mr-2" />
+                관리자 로그인
+            </Button>
+        </div>
 
         <div className="text-center text-sm text-muted-foreground">
           <p>💡 팁: 만든 스케줄의 이름과 비밀번호를 공유하세요</p>
