@@ -83,7 +83,7 @@ const Schedule = () => {
       const newParticipant: Participant = {
         id: Date.now().toString(),
         name,
-        color: PARTICIPIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
+        color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
       };
       const updatedSchedule = {
         ...schedule,
