@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, Share2, Trash2 } from 'lucide-react';
+import { Home, Share2, Trash2, Eye } from 'lucide-react';
 import { getSchedules, deleteSchedule } from '@/lib/storage';
 import { Schedule } from '@/types';
 import { toast } from 'sonner';
@@ -25,6 +25,10 @@ const Admin = () => {
     const shareUrl = `${window.location.origin}/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success('스케줄 링크가 복사되었습니다.');
+  };
+
+  const handleView = (schedule: Schedule) => {
+    navigate(`/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`);
   };
 
   return (
@@ -58,6 +62,10 @@ const Admin = () => {
                       <p className="text-sm text-muted-foreground">참여자: {schedule.participants.length}명</p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleView(schedule)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        보기
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => handleShare(schedule)}>
                         <Share2 className="w-4 h-4 mr-2" />
                         공유
