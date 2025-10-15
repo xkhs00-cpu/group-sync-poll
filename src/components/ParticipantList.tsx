@@ -1,13 +1,15 @@
 import { Participant } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Users, UserPlus } from 'lucide-react';
 
 interface ParticipantListProps {
   participants: Participant[];
   currentParticipantId: string | null;
+  onAddParticipant: () => void;
 }
 
-const ParticipantList = ({ participants, currentParticipantId }: ParticipantListProps) => {
+const ParticipantList = ({ participants, currentParticipantId, onAddParticipant }: ParticipantListProps) => {
   return (
     <Card className="shadow-medium">
       <CardHeader className="pb-3">
@@ -40,6 +42,12 @@ const ParticipantList = ({ participants, currentParticipantId }: ParticipantList
           )}
         </div>
       </CardContent>
+      <CardFooter>
+        <Button onClick={onAddParticipant} className="w-full">
+          <UserPlus className="w-4 h-4 mr-2" />
+          참여자 추가
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
