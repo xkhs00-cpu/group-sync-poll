@@ -1,69 +1,61 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Calendar, Lock, Users, Shield } from 'lucide-react';
-import { getSchedule, createSchedule, getScheduleByName } from '@/lib/storage';
+import { Calendar, Users, Shield, LogOut } from 'lucide-react';
+import { createSchedule } from '@/lib/storage';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { scheduleSchema } from '@/lib/validation';
 
 const Auth = () => {
   const [scheduleName, setScheduleName] = useState('');
-  const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { user, isAdmin, signOut } = useAuth();
 
-  const handleCreate = () => {
-    if (!scheduleName.trim() || !password.trim()) {
-      toast.error('스케줄 이름과 비밀번호를 입력해주세요');
-      return;
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
     }
-    if (!/^\d+$/.test(password)) {
-      toast.error('비밀번호는 숫자로만 입력해주세요.');
-      return;
-    }
+  }, [user, navigate]);
 
-    const existing = getScheduleByName(scheduleName);
-    if (existing) {
-      toast.error('이미 존재하는 스케줄 이름입니다. 다른 이름을 사용해주세요');
-      return;
-    }
-
-    createSchedule(scheduleName, password);
-    toast.success('새 스케줄이 생성되었습니다!');
-    navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
-  };
-
-  const handleJoin = () => {
-    if (!scheduleName.trim() || !password.trim()) {
-      toast.error('스케줄 이름과 비밀번호를 입력해주세요');
+  const handleCreate = async () => {
+    if (!user) {
+      toast.error('로그인이 필요합니다');
+      navigate('/login');
       return;
     }
 
-    const schedule = getSchedule(scheduleName, password);
-    if (!schedule) {
-      toast.error('일치하는 스케줄을 찾을 수 없습니다');
-      return;
-    }
-
-    toast.success('스케줄에 참여합니다');
-    navigate(`/schedule?name=${encodeURIComponent(scheduleName)}&password=${encodeURIComponent(password)}`);
-  };
-
-  const handleAdminLogin = () => {
-    const adminId = prompt('관리자 아이디를 입력하세요:');
-    if (adminId === 'admin') {
-      const adminPassword = prompt('관리자 비밀번호를 입력하세요:');
-      if (adminPassword === '0000') {
-        navigate('/admin');
+    try {
+      const validated = scheduleSchema.parse({ 
+        name: scheduleName, 
+        password: 'not-used' // Validation requires it but we don't use it anymore
+      });
+      
+      const newSchedule = await createSchedule(validated.name, user.id);
+      toast.success('새 스케줄이 생성되었습니다!');
+      navigate(`/schedule/${newSchedule.id}`);
+    } catch (error: any) {
+      if (error.errors) {
+        toast.error(error.errors[0].message);
       } else {
-        toast.error('비밀번호가 올바르지 않습니다.');
+        toast.error('오류가 발생했습니다. 다시 시도해주세요.');
       }
-    } else if (adminId) {
-      toast.error('아이디가 올바르지 않습니다.');
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('로그아웃되었습니다');
+    navigate('/login');
+  };
+
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -84,9 +76,9 @@ const Auth = () => {
 
         <Card className="shadow-strong">
           <CardHeader>
-            <CardTitle>스케줄 시작하기</CardTitle>
+            <CardTitle>스케줄 만들기</CardTitle>
             <CardDescription>
-              새로운 스케줄을 만들거나 기존 스케줄에 참여하세요
+              새로운 스케줄을 만드세요
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -100,42 +92,27 @@ const Auth = () => {
                 placeholder="예: 3분기 워크숍"
                 value={scheduleName}
                 onChange={(e) => setScheduleName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                비밀번호 (숫자)
-              </Label>
-              <Input
-                id="password"
-                type="number"
-                placeholder="숫자로된 비밀번호 입력"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <Button onClick={handleCreate} className="w-full">
-                새로 만들기
-              </Button>
-              <Button onClick={handleJoin} variant="secondary" className="w-full">
-                참여하기
-              </Button>
-            </div>
+            <Button onClick={handleCreate} className="w-full">
+              새 스케줄 만들기
+            </Button>
           </CardContent>
         </Card>
-        <div className="text-center">
-            <Button onClick={handleAdminLogin} variant="outline" size="sm">
-                <Shield className="w-4 h-4 mr-2" />
-                관리자 로그인
-            </Button>
-        </div>
 
-        <div className="text-center text-sm text-muted-foreground">
-          <p>💡 팁: 만든 스케줄의 이름과 비밀번호를 공유하세요</p>
+        <div className="flex flex-col gap-2">
+          {isAdmin && (
+            <Button onClick={() => navigate('/admin')} variant="outline" size="sm" className="w-full">
+              <Shield className="w-4 h-4 mr-2" />
+              관리자 페이지
+            </Button>
+          )}
+          <Button onClick={handleSignOut} variant="outline" size="sm" className="w-full">
+            <LogOut className="w-4 h-4 mr-2" />
+            로그아웃
+          </Button>
         </div>
       </div>
     </div>
