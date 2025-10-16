@@ -46,7 +46,7 @@ const Schedule = () => {
     setSchedule(loadedSchedule);
 
     const savedParticipantId = localStorage.getItem(`participant-${loadedSchedule.id}`);
-    if (savedParticipantId && loadedSchedule.participants?.find(p => p.id === savedParticipantId)) {
+    if (savedParticipantId && loadedSchedule.participants.find(p => p.id === savedParticipantId)) {
       setCurrentParticipantId(savedParticipantId);
       setSelectedParticipantId(savedParticipantId);
     } else {
@@ -60,18 +60,15 @@ const Schedule = () => {
       return;
     }
 
-    // participants 배열이 없는 경우를 대비해 기본값으로 빈 배열을 사용
-    const participants = Array.isArray(schedule.participants) ? schedule.participants : [];
-
     const newParticipant: Participant = {
       id: Date.now().toString(),
       name: participantName,
-      color: PARTICIPANT_COLORS[participants.length % PARTICIPANT_COLORS.length],
+      color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
     };
 
     const updatedSchedule = {
       ...schedule,
-      participants: [...participants, newParticipant],
+      participants: [...schedule.participants, newParticipant],
     };
 
     saveSchedule(updatedSchedule);
@@ -86,17 +83,14 @@ const Schedule = () => {
   const handleAddParticipant = () => {
     const name = prompt('새 참여자의 이름을 입력하세요:');
     if (name && schedule) {
-      // participants 배열이 없는 경우를 대비해 기본값으로 빈 배열을 사용
-      const participants = Array.isArray(schedule.participants) ? schedule.participants : [];
-
       const newParticipant: Participant = {
         id: Date.now().toString(),
         name,
-        color: PARTICIPANT_COLORS[participants.length % PARTICIPANT_COLORS.length],
+        color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
       };
       const updatedSchedule = {
         ...schedule,
-        participants: [...participants, newParticipant],
+        participants: [...schedule.participants, newParticipant],
       };
       saveSchedule(updatedSchedule);
       setSchedule(updatedSchedule);
@@ -130,7 +124,7 @@ const Schedule = () => {
       }
     } else {
       updatedSelections = [
-        ...(schedule.dateSelections || []),
+        ...schedule.dateSelections,
         { date, participantIds: [selectedParticipantId] },
       ];
     }
@@ -155,7 +149,7 @@ const Schedule = () => {
 
     const updatedSchedule = {
       ...schedule,
-      timeOptions: [...(schedule.timeOptions || []), newOption],
+      timeOptions: [...schedule.timeOptions, newOption],
     };
 
     saveSchedule(updatedSchedule);
@@ -165,7 +159,7 @@ const Schedule = () => {
   const handleToggleVote = (optionId: string) => {
     if (!schedule || !currentParticipantId) return;
 
-    const updatedOptions = (schedule.timeOptions || []).map(option => {
+    const updatedOptions = schedule.timeOptions.map(option => {
       if (option.id === optionId) {
         const hasVoted = option.votes.includes(currentParticipantId);
         return {
@@ -192,7 +186,7 @@ const Schedule = () => {
 
     const updatedSchedule = {
       ...schedule,
-      timeOptions: (schedule.timeOptions || []).filter(option => option.id !== optionId),
+      timeOptions: schedule.timeOptions.filter(option => option.id !== optionId),
     };
 
     saveSchedule(updatedSchedule);
@@ -254,7 +248,7 @@ const Schedule = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
             <ParticipantList
-              participants={schedule.participants || []}
+              participants={schedule.participants}
               currentParticipantId={currentParticipantId}
               selectedParticipantId={selectedParticipantId}
               onParticipantSelect={setSelectedParticipantId}
@@ -264,14 +258,14 @@ const Schedule = () => {
 
           <div className="lg:col-span-3 space-y-6">
             <Calendar
-              dateSelections={schedule.dateSelections || []}
-              participants={schedule.participants || []}
+              dateSelections={schedule.dateSelections}
+              participants={schedule.participants}
               currentParticipantId={selectedParticipantId}
               onDateToggle={handleDateToggle}
             />
 
             <TimeVoting
-              timeOptions={schedule.timeOptions || []}
+              timeOptions={schedule.timeOptions}
               currentParticipantId={currentParticipantId}
               onAddTimeOption={handleAddTimeOption}
               onToggleVote={handleToggleVote}
