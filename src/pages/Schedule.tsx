@@ -104,23 +104,30 @@ const Schedule = () => {
 
   const handleAddParticipant = async () => {
     const name = prompt('새 참여자의 이름을 입력하세요:');
-    if (name && schedule) {
-      const newParticipant: Participant = {
-        id: crypto.randomUUID(),
-        name,
-        color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
-      };
-      const updatedSchedule = {
-        ...schedule,
-        participants: [...schedule.participants, newParticipant],
-      };
+    if (name === null) return; // 사용자가 취소한 경우
 
+    if (schedule) {
       try {
+        const validated = participantSchema.parse({ name });
+        const newParticipant: Participant = {
+          id: crypto.randomUUID(),
+          name: validated.name,
+          color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
+        };
+        const updatedSchedule = {
+          ...schedule,
+          participants: [...schedule.participants, newParticipant],
+        };
+
         await saveSchedule(updatedSchedule);
         setSchedule(updatedSchedule);
-        toast.success(`${name}님이 추가되었습니다.`);
-      } catch (error) {
-        toast.error('참여자 추가 중 오류가 발생했습니다.');
+        toast.success(`${validated.name}님이 추가되었습니다.`);
+      } catch (error: any) {
+        if (error.errors) {
+          toast.error(error.errors[0].message);
+        } else {
+          toast.error('참여자 추가 중 오류가 발생했습니다.');
+        }
         console.error('Add participant error:', error);
       }
     }
