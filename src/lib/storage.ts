@@ -28,6 +28,7 @@ export const getSchedules = async (): Promise<Schedule[]> => {
         dateSelections,
         timeOptions,
         createdAt: schedule.created_at,
+        userId: schedule.user_id,
       };
     })
   );
@@ -60,6 +61,7 @@ export const getSchedule = async (scheduleId: string): Promise<Schedule | null> 
     dateSelections,
     timeOptions,
     createdAt: schedule.created_at,
+    userId: schedule.user_id,
   };
 };
 
@@ -124,6 +126,7 @@ export const saveSchedule = async (schedule: Schedule): Promise<void> => {
       name: schedule.name,
       password: schedule.password,
       created_at: schedule.createdAt,
+      user_id: schedule.userId,
     });
 
   if (scheduleError) {
@@ -214,6 +217,7 @@ export const createSchedule = async (name: string, userId: string): Promise<Sche
     dateSelections: [],
     timeOptions: [],
     createdAt: newSchedule.created_at,
+    userId: newSchedule.user_id,
   };
 };
 
