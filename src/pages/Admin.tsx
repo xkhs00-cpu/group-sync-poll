@@ -5,58 +5,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home, Share2, Trash2, Eye } from 'lucide-react';
 import { getSchedules, deleteSchedule } from '@/lib/storage';
 import { Schedule } from '@/types';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const Admin = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+    setSchedules(getSchedules());
+  }, []);
 
-    if (!isAdmin) {
-      toast.error('관리자 권한이 필요합니다');
-      navigate('/');
-      return;
-    }
-
-    const loadSchedules = async () => {
-      const data = await getSchedules();
-      setSchedules(data);
-    };
-    loadSchedules();
-  }, [user, isAdmin, navigate]);
-
-  const handleDelete = async (scheduleId: string) => {
-    try {
-      await deleteSchedule(scheduleId);
-      const data = await getSchedules();
-      setSchedules(data);
-      toast.success('스케줄이 삭제되었습니다.');
-    } catch (error) {
-      toast.error('삭제 중 오류가 발생했습니다.');
-      console.error('Error deleting schedule:', error);
-    }
+  const handleDelete = (scheduleId: string) => {
+    deleteSchedule(scheduleId);
+    setSchedules(getSchedules());
+    toast.success('스케줄이 삭제되었습니다.');
   };
 
   const handleShare = (schedule: Schedule) => {
-    const shareUrl = `${window.location.origin}/schedule/${schedule.id}`;
+    const shareUrl = `${window.location.origin}/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success('스케줄 링크가 복사되었습니다.');
   };
 
   const handleView = (schedule: Schedule) => {
-    navigate(`/schedule/${schedule.id}`);
+    navigate(`/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`);
   };
-
-  if (!user || !isAdmin) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen p-4 md:p-8 bg-background">
