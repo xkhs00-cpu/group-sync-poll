@@ -23,6 +23,7 @@ export interface Schedule {
   dateSelections: DateSelection[];
   timeOptions: TimeOption[];
   createdAt: string;
+  userId: string | null;
 }
 
 export const PARTICIPANT_COLORS = [
