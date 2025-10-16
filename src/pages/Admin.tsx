@@ -5,19 +5,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home, Share2, Trash2, Eye } from 'lucide-react';
 import { getSchedules, deleteSchedule } from '@/lib/storage';
 import { Schedule } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const Admin = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!isAdmin) {
+      toast.error('관리자 권한이 필요합니다');
+      navigate('/');
+      return;
+    }
+
     const loadSchedules = async () => {
       const data = await getSchedules();
       setSchedules(data);
     };
     loadSchedules();
-  }, []);
+  }, [user, isAdmin, navigate]);
 
   const handleDelete = async (scheduleId: string) => {
     try {
@@ -32,14 +45,18 @@ const Admin = () => {
   };
 
   const handleShare = (schedule: Schedule) => {
-    const shareUrl = `${window.location.origin}/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`;
+    const shareUrl = `${window.location.origin}/schedule/${schedule.id}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success('스케줄 링크가 복사되었습니다.');
   };
 
   const handleView = (schedule: Schedule) => {
-    navigate(`/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`);
+    navigate(`/schedule/${schedule.id}`);
   };
+
+  if (!user || !isAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8 bg-background">

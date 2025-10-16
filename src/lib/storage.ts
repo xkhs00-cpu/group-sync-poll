@@ -35,12 +35,11 @@ export const getSchedules = async (): Promise<Schedule[]> => {
   return schedulesWithData;
 };
 
-export const getSchedule = async (name: string, password: string): Promise<Schedule | null> => {
+export const getSchedule = async (scheduleId: string): Promise<Schedule | null> => {
   const { data: schedule, error } = await supabase
     .from('schedules')
     .select('*')
-    .eq('name', name)
-    .eq('password', password)
+    .eq('id', scheduleId)
     .single();
 
   if (error || !schedule) {
@@ -191,12 +190,13 @@ export const saveSchedule = async (schedule: Schedule): Promise<void> => {
   }
 };
 
-export const createSchedule = async (name: string, password: string): Promise<Schedule> => {
+export const createSchedule = async (name: string, userId: string): Promise<Schedule> => {
   const { data: newSchedule, error } = await supabase
     .from('schedules')
     .insert({
       name,
-      password,
+      user_id: userId,
+      password: '', // Password no longer needed for new auth system
     })
     .select()
     .single();

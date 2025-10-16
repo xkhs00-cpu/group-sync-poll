@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,31 +14,36 @@ import { ArrowLeft, UserPlus, Save, Share2 } from 'lucide-react';
 import { getSchedule, saveSchedule } from '@/lib/storage';
 import { Schedule as ScheduleType, Participant, PARTICIPANT_COLORS } from '@/types';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { participantSchema } from '@/lib/validation';
 import ParticipantList from '@/components/ParticipantList';
 import Calendar from '@/components/Calendar';
 import TimeVoting from '@/components/TimeVoting';
 
 const Schedule = () => {
-  const [searchParams] = useSearchParams();
+  const { scheduleId } = useParams<{ scheduleId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [schedule, setSchedule] = useState<ScheduleType | null>(null);
   const [currentParticipantId, setCurrentParticipantId] = useState<string | null>(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [participantName, setParticipantName] = useState('');
 
-  const scheduleName = searchParams.get('name');
-  const password = searchParams.get('password');
-
   useEffect(() => {
-    if (!scheduleName || !password) {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!scheduleId) {
       navigate('/');
       return;
     }
 
     const loadScheduleData = async () => {
       try {
-        const loadedSchedule = await getSchedule(scheduleName, password);
+        const loadedSchedule = await getSchedule(scheduleId);
         if (!loadedSchedule) {
           toast.error('스케줄을 찾을 수 없습니다');
           navigate('/');
@@ -62,36 +67,38 @@ const Schedule = () => {
     };
 
     loadScheduleData();
-  }, [scheduleName, password, navigate]);
+  }, [scheduleId, user, navigate]);
 
   const handleJoin = async () => {
-    if (!participantName.trim() || !schedule) {
-      toast.error('이름을 입력해주세요');
-      return;
-    }
+    if (!schedule) return;
 
-    const newParticipant: Participant = {
-      id: crypto.randomUUID(),
-      name: participantName,
-      color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
-    };
+    try {
+      const validated = participantSchema.parse({ name: participantName });
+      
+      const newParticipant: Participant = {
+        id: crypto.randomUUID(),
+        name: validated.name,
+        color: PARTICIPANT_COLORS[schedule.participants.length % PARTICIPANT_COLORS.length],
+      };
 
     const updatedSchedule = {
       ...schedule,
       participants: [...schedule.participants, newParticipant],
     };
 
-    try {
       await saveSchedule(updatedSchedule);
       setSchedule(updatedSchedule);
       setCurrentParticipantId(newParticipant.id);
       setSelectedParticipantId(newParticipant.id);
       localStorage.setItem(`participant-${schedule.id}`, newParticipant.id);
       setShowJoinDialog(false);
-      toast.success(`${participantName}님, 환영합니다!`);
-    } catch (error) {
-      toast.error('참여 중 오류가 발생했습니다.');
-      console.error('Join participant error:', error);
+      toast.success(`${validated.name}님, 환영합니다!`);
+    } catch (error: any) {
+      if (error.errors) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error('참여 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -249,7 +256,7 @@ const Schedule = () => {
 
   const handleShare = () => {
     if (schedule) {
-      const shareUrl = `${window.location.origin}/schedule?name=${encodeURIComponent(schedule.name)}&password=${encodeURIComponent(schedule.password)}`;
+      const shareUrl = `${window.location.origin}/schedule/${schedule.id}`;
       navigator.clipboard.writeText(shareUrl);
       toast.success('공유 링크가 복사되었습니다.');
     }
